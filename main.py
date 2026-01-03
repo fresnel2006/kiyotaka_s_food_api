@@ -36,6 +36,7 @@ class Utilisateur(BaseModel):
     nom:Optional[str]=None
     numero:Optional[str]=None
     mot_de_passe:Optional[str]=None
+    numero_utilisation:Optional[str]=None
     
 #definition de la classe Commande
 class Commande_produit(BaseModel):
@@ -179,7 +180,7 @@ def enregistrer_commande(request:Request,commande:Commande_produit):
         clients[ip] = {"temps": temps_client, "nombre de requette": 1}
         pass
     else:
-        if clients[ip]["nombre de requette"] >= 3:
+        if clients[ip]["nombre de requette"] >=limite:
             if int(time.time()) - clients[ip]["temps"] > fenetre_de_temps:
                 clients[ip]["nombre de requette"] = 1
                 pass
@@ -202,6 +203,43 @@ def enregistrer_commande(request:Request,commande:Commande_produit):
         conn.execute(sql,(commande.numero,commande.quantite,commande.produit,commande.nom,commande.prix_produit))
         connecter.commit()
         return {"resultat":"commande ajoutée"}
+    finally:
+        conn.close()
+        connecter.close()
+
+@app.post("/modifier_utilisateur")
+def modifier_utilisateur(request:Request,modifier:Utilisateur):
+
+    ip = request.client.host
+    temps_client = int(time.time())
+
+    if ip not in clients:
+        clients[ip] = {"temps": temps_client, "nombre de requette": 1}
+        pass
+    else:
+        if clients[ip]["nombre de requette"] >= 3:
+            if int(time.time()) - clients[ip]["temps"] > fenetre_de_temps:
+                clients[ip]["nombre de requette"] = 1
+                pass
+            else:
+                return {"resultat": "trop de requette petit hacker"}
+        else:
+            clients[ip]["nombre de requette"] = clients[ip]["nombre de requette"] + 1
+            clients[ip]["temps"] = int(time.time())
+            print(clients[ip])
+            pass
+    sql=("UPDATE utilisateurs SET nom=%s, mot_de_passe=%s WHERE numero=%s;")
+    try:
+        connecter = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="kiyotaka_s_food"
+        )
+        conn=connecter.cursor()
+        conn.execute(sql,(modifier.nom,modifier.mot_de_passe,modifier.numero_utilisation))
+        connecter.commit()
+        return {"resultat":"modifications ajoutées"}
     finally:
         conn.close()
         connecter.close()
