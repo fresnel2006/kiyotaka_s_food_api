@@ -244,3 +244,25 @@ def modifier_utilisateur(request:Request,modifier:Utilisateur):
         conn.close()
         connecter.close()
 
+#fonction pour envoyer les commandes
+@app.get("/ensemble_des_commandes")
+def envoie_des_commandes():
+    sql="SELECT * FROM commande;"
+    try:
+        connecter = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="kiyotaka_s_food"
+        )
+        conn=connecter.cursor()
+        conn.execute(sql)
+        resultat = conn.fetchall()
+        if resultat == []:
+            return {"resultat": "existe pas"}
+        else:
+            return {"resultat": resultat}
+    finally:
+        conn.close()
+        connecter.close()
+
